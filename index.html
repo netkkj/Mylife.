@@ -32,6 +32,7 @@
             overflow: hidden;
             pointer-events: none;
             transition: opacity 3s ease-in-out;
+            background: #000;
         }
 
         .video-background iframe {
@@ -42,7 +43,7 @@
             height: 56.25vw;
             min-height: 100vh;
             min-width: 177.77vh;
-            transform: translate(-50%, -50%) scale(1.2);
+            transform: translate(-50%, -50%) scale(1.25);
             filter: brightness(0.65) contrast(1.15) blur(1.5px);
             border: none;
             pointer-events: none;
@@ -153,13 +154,10 @@
 <body>
 
     <div class="video-background" id="bg-container">
-        <iframe src="https://www.youtube.com/embed/8mgPMEdj7tw?autoplay=1&mute=1&controls=0&loop=1&playlist=8mgPMEdj7tw&disablekb=1&modestbranding=1&playsinline=1" 
-                title="Minecraft Gameplay Background" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>
+        <div id="bg-player"></div>
     </div>
 
-    <div id="audio-container"></div>
+    <div id="audio-container" style="display:none;"></div>
 
     <canvas id="particles-canvas"></canvas>
     <div class="overlay"></div>
@@ -174,34 +172,82 @@
     <div class="footer-credit" id="footer-credit">Gameplay: [http://www.youtube.com/watch?v=8mgPMEdj7tw] • Poema: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Inicia a experiência com áudio ao clique
+        // Carrega a API do YouTube dinamicamente
+        let tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        let firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        let bgPlayer, audioPlayer;
+
+        window.onYouTubeIframeAPIReady = function() {
+            // Inicializa o player de fundo (Gameplay em loop e mudo obrigatório para autoplay funcionar)
+            bgPlayer = new YT.Player('bg-player', {
+                height: '100%',
+                width: '100%',
+                videoId: '8mgPMEdj7tw',
+                playerVars: {
+                    'autoplay': 1,
+                    'mute': 1,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': '8mgPMEdj7tw',
+                    'playsinline': 1,
+                    'disablekb': 1,
+                    'modestbranding': 1,
+                    'iv_load_policy': 3
+                },
+                events: {
+                    'onReady': (event) => {
+                        event.target.playVideo();
+                    }
+                }
+            });
+        };
+
+        // Inicia a experiência e ativa o áudio principal ao clicar no botão
         function startExperience() {
-            // Insere o iframe do poema narrado com som ativado
-            const audioContainer = document.getElementById('audio-container');
-            audioContainer.innerHTML = `
-                <iframe src="https://www.youtube.com/embed/VqZZLTJkl5Q?autoplay=1" 
-                        allow="autoplay" style="display:none;" title="End Poem Audio"></iframe>
-            `;
-            
+            // Cria o player de áudio do poema narrado
+            if (!audioPlayer) {
+                audioPlayer = new YT.Player('audio-container', {
+                    height: '1',
+                    width: '1',
+                    videoId: 'VqZZLTJkl5Q',
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 0
+                    },
+                    events: {
+                        'onStateChange': (event) => {
+                            // YT.PlayerState.ENDED = 0 (Terminou o poema)
+                            if (event.data === 0) {
+                                triggerFadeOut();
+                            }
+                        }
+                    }
+                });
+            }
+
             // Esconde o botão interativo
             document.querySelector('.play-btn').style.display = 'none';
 
-            // Duração do poema narrado (~11 minutos e 4 segundos = 664000ms)
+            // Segurança: Duração aproximada do poema narrado (~11 minutos e 4 segundos = 664000ms) caso o evento de fim falhe
             setTimeout(() => {
                 triggerFadeOut();
             }, 664000);
         }
 
-        // Função de Fade Out suave que apaga tudo ao final do poema
+        // Função de Fade Out suave que apaga tudo ao final
         function triggerFadeOut() {
             document.getElementById('bg-container').style.opacity = '0';
             document.getElementById('particles-canvas').style.opacity = '0';
             document.getElementById('main-content').style.opacity = '0';
             document.getElementById('footer-credit').style.opacity = '0';
             
-            // Substitui o fundo por vazio para encerrar a reprodução
             setTimeout(() => {
-                document.getElementById('bg-container').innerHTML = '';
+                if (bgPlayer && typeof bgPlayer.stopVideo === 'function') {
+                    bgPlayer.stopVideo();
+                }
             }, 3000);
         }
 
