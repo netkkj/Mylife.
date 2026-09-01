@@ -21,7 +21,7 @@
             color: #e0e0e0;
         }
 
-        /* Container do Vídeo de Fundo */
+        /* Container do Vídeo de Fundo Nativo (HTML5) - Garante 100% de funcionamento no GitHub Pages */
         .video-background {
             position: fixed;
             top: 0;
@@ -35,18 +35,17 @@
             background: #000;
         }
 
-        .video-background iframe {
+        .video-background video {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 100vw;
-            height: 56.25vw;
-            min-height: 100vh;
-            min-width: 177.77vh;
-            transform: translate(-50%, -50%) scale(1.25);
-            filter: brightness(0.65) contrast(1.15) blur(1.5px);
-            border: none;
-            pointer-events: none;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%) scale(1.15);
+            filter: brightness(0.6) contrast(1.15) blur(1.5px);
+            object-fit: cover;
         }
 
         /* Canvas de Partículas Minimalistas */
@@ -154,7 +153,10 @@
 <body>
 
     <div class="video-background" id="bg-container">
-        <div id="bg-player"></div>
+        <video autoplay muted loop playsinline id="bg-video">
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4">
+            Seu navegador não suporta vídeos em HTML5.
+        </video>
     </div>
 
     <div id="audio-container" style="display:none;"></div>
@@ -169,37 +171,33 @@
         <button class="play-btn" onclick="startExperience()">Iniciar Experiência</button>
     </div>
 
-    <div class="footer-credit" id="footer-credit">Gameplay: [http://www.youtube.com/watch?v=8mgPMEdj7tw] • Poema: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
+    <div class="footer-credit" id="footer-credit">Poema Narrado: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Carrega a API do YouTube dinamicamente
+        // Carrega a API do YouTube dinamicamente para rodar o áudio do poema sem travar
         let tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         let firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        let bgPlayer, audioPlayer;
+        let audioPlayer;
 
         window.onYouTubeIframeAPIReady = function() {
-            // Inicializa o player de fundo (Gameplay em loop e mudo obrigatório para autoplay funcionar)
-            bgPlayer = new YT.Player('bg-player', {
-                height: '100%',
-                width: '100%',
-                videoId: '8mgPMEdj7tw',
+            // Prepara o player de áudio do poema em segundo plano
+            audioPlayer = new YT.Player('audio-container', {
+                height: '1',
+                width: '1',
+                videoId: 'VqZZLTJkl5Q',
                 playerVars: {
-                    'autoplay': 1,
-                    'mute': 1,
-                    'controls': 0,
-                    'loop': 1,
-                    'playlist': '8mgPMEdj7tw',
-                    'playsinline': 1,
-                    'disablekb': 1,
-                    'modestbranding': 1,
-                    'iv_load_policy': 3
+                    'autoplay': 0,
+                    'controls': 0
                 },
                 events: {
-                    'onReady': (event) => {
-                        event.target.playVideo();
+                    'onStateChange': (event) => {
+                        // YT.PlayerState.ENDED = 0 (Terminou o poema)
+                        if (event.data === 0) {
+                            triggerFadeOut();
+                        }
                     }
                 }
             });
@@ -207,31 +205,14 @@
 
         // Inicia a experiência e ativa o áudio principal ao clicar no botão
         function startExperience() {
-            // Cria o player de áudio do poema narrado
-            if (!audioPlayer) {
-                audioPlayer = new YT.Player('audio-container', {
-                    height: '1',
-                    width: '1',
-                    videoId: 'VqZZLTJkl5Q',
-                    playerVars: {
-                        'autoplay': 1,
-                        'controls': 0
-                    },
-                    events: {
-                        'onStateChange': (event) => {
-                            // YT.PlayerState.ENDED = 0 (Terminou o poema)
-                            if (event.data === 0) {
-                                triggerFadeOut();
-                            }
-                        }
-                    }
-                });
+            if (audioPlayer && typeof audioPlayer.playVideo === 'function') {
+                audioPlayer.playVideo();
             }
 
             // Esconde o botão interativo
             document.querySelector('.play-btn').style.display = 'none';
 
-            // Segurança: Duração aproximada do poema narrado (~11 minutos e 4 segundos = 664000ms) caso o evento de fim falhe
+            // Segurança: Duração aproximada do poema narrado (~11 minutos e 4 segundos = 664000ms)
             setTimeout(() => {
                 triggerFadeOut();
             }, 664000);
@@ -245,9 +226,8 @@
             document.getElementById('footer-credit').style.opacity = '0';
             
             setTimeout(() => {
-                if (bgPlayer && typeof bgPlayer.stopVideo === 'function') {
-                    bgPlayer.stopVideo();
-                }
+                const video = document.getElementById('bg-video');
+                if (video) video.pause();
             }, 3000);
         }
 
