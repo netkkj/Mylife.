@@ -21,7 +21,7 @@
             color: #e0e0e0;
         }
 
-        /* Container do GIF de Fundo (1.gif na raiz) */
+        /* Container do GIF de Fundo (1.gif) */
         .gif-background {
             position: fixed;
             top: 0;
@@ -32,7 +32,7 @@
             overflow: hidden;
             pointer-events: none;
             transition: opacity 3s ease-in-out;
-            background: #000;
+            background: #030303;
         }
 
         .gif-background img {
@@ -44,18 +44,17 @@
             width: auto;
             height: auto;
             transform: translate(-50%, -50%) scale(1.15);
-            /* Filtro aplicado para não ficar tão visível, mantendo o clima nostálgico e temático */
             filter: brightness(0.55) contrast(1.15) blur(2px);
             object-fit: cover;
         }
 
-        /* Canvas de Partículas Minimalistas */
+        /* Canvas de Partículas Minimalistas (Garantido em camada superior ao fundo) */
         #particles-canvas {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
             pointer-events: none;
             transition: opacity 3s ease-in-out;
@@ -154,12 +153,13 @@
 <body>
 
     <div class="gif-background" id="bg-container">
-        <img src="1.gif" alt="Minecraft Background Animation" id="bg-gif">
+        <img src="1.gif" alt="Minecraft Background" onerror="this.style.display='none'; console.log('Erro ao carregar 1.gif');">
     </div>
+
+    <canvas id="particles-canvas"></canvas>
 
     <div id="audio-container" style="display:none;"></div>
 
-    <canvas id="particles-canvas"></canvas>
     <div class="overlay"></div>
 
     <div class="container" id="main-content">
@@ -172,7 +172,64 @@
     <div class="footer-credit" id="footer-credit">Poema Narrado: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Carrega a API do YouTube dinamicamente para rodar o áudio do poema
+        // Inicialização do sistema de partículas minimalistas isolado e garantido
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.8 + 0.5;
+                this.speedY = (Math.random() * 0.3 - 0.15);
+                this.speedX = (Math.random() * 0.2 - 0.1);
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.y -= this.speedY;
+                this.x += this.speedX;
+                this.alpha += (Math.random() > 0.5 ? 1 : -1) * 0.01;
+                if (this.alpha < 0.1) this.alpha = 0.1;
+                if (this.alpha > 0.8) this.alpha = 0.8;
+
+                if (this.y < 0 || this.y > canvas.height || this.x < 0 || this.x > canvas.width) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 50; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // Carrega a API do YouTube dinamicamente para o áudio do poema
         let tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         let firstScriptTag = document.getElementsByTagName('script')[0];
@@ -222,63 +279,6 @@
             document.getElementById('main-content').style.opacity = '0';
             document.getElementById('footer-credit').style.opacity = '0';
         }
-
-        // Sistema de Partículas Minimalistas
-        const canvas = document.getElementById('particles-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 1.8 + 0.5;
-                this.speedY = (Math.random() * 0.3 - 0.15);
-                this.speedX = (Math.random() * 0.2 - 0.1);
-                this.alpha = Math.random() * 0.5 + 0.2;
-            }
-            update() {
-                this.y -= this.speedY;
-                this.x += this.speedX;
-                this.alpha += (Math.random() > 0.5 ? 1 : -1) * 0.01;
-                if (this.alpha < 0.1) this.alpha = 0.1;
-                if (this.alpha > 0.8) this.alpha = 0.8;
-
-                if (this.y < 0 || this.y > canvas.height || this.x < 0 || this.x > canvas.width) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        for (let i = 0; i < 45; i++) {
-            particles.push(new Particle());
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
     </script>
 </body>
 </html>
