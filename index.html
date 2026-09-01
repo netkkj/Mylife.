@@ -21,7 +21,7 @@
             color: #e0e0e0;
         }
 
-        /* Container do Vídeo de Fundo Nativo (HTML5) - Garante 100% de funcionamento no GitHub Pages */
+        /* Container do Vídeo de Fundo Nativo (1.mp4 na raiz) */
         .video-background {
             position: fixed;
             top: 0;
@@ -154,7 +154,7 @@
 
     <div class="video-background" id="bg-container">
         <video autoplay muted loop playsinline id="bg-video">
-            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4">
+            <source src="1.mp4" type="video/mp4">
             Seu navegador não suporta vídeos em HTML5.
         </video>
     </div>
@@ -174,7 +174,7 @@
     <div class="footer-credit" id="footer-credit">Poema Narrado: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Carrega a API do YouTube dinamicamente para rodar o áudio do poema sem travar
+        // Carrega a API do YouTube dinamicamente para rodar o áudio do poema
         let tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         let firstScriptTag = document.getElementsByTagName('script')[0];
@@ -183,7 +183,6 @@
         let audioPlayer;
 
         window.onYouTubeIframeAPIReady = function() {
-            // Prepara o player de áudio do poema em segundo plano
             audioPlayer = new YT.Player('audio-container', {
                 height: '1',
                 width: '1',
