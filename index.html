@@ -21,7 +21,7 @@
             color: #e0e0e0;
         }
 
-        /* Container do Vídeo de Fundo Nativo (1.mp4 na raiz) */
+        /* Container do Vídeo de Fundo Nativo (1.mp4) */
         .video-background {
             position: fixed;
             top: 0;
@@ -105,7 +105,7 @@
             animation: fadeIn 2.5s ease-in-out;
         }
 
-        /* Botão Interativo */
+        /* Botão Interativo (Inicialmente oculto até o vídeo carregar) */
         .play-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.25);
@@ -118,6 +118,7 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(5px);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: none; /* Só aparece quando o vídeo estiver pronto */
             animation: pulse 3s infinite;
         }
 
@@ -127,6 +128,14 @@
             border-color: #fff;
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        .loading-text {
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            color: #777;
+            letter-spacing: 1px;
+            animation: fadeIn 1s infinite alternate;
         }
 
         .footer-credit {
@@ -139,8 +148,8 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0.3; }
+            to { opacity: 1; }
         }
 
         @keyframes pulse {
@@ -168,13 +177,33 @@
         <h1 class="pixel-title">O FIM DO JOGO</h1>
         <p class="subtitle">"E o universo disse: Eu te amo, porque você é o amor..." <br> Uma jornada inesquecível construída bloco por bloco.</p>
         
-        <button class="play-btn" onclick="startExperience()">Iniciar Experiência</button>
+        <div class="loading-text" id="loading-msg">Carregando gameplay de fundo...</div>
+        
+        <button class="play-btn" id="start-btn" onclick="startExperience()">Iniciar Experiência</button>
     </div>
 
     <div class="footer-credit" id="footer-credit">Poema Narrado: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Carrega a API do YouTube dinamicamente para rodar o áudio do poema
+        const videoElement = document.getElementById('bg-video');
+        const loadingMsg = document.getElementById('loading-msg');
+        const startBtn = document.getElementById('start-btn');
+
+        // Monitora se o arquivo 1.mp4 carregou com sucesso do GitHub
+        videoElement.addEventListener('canplaythrough', () => {
+            loadingMsg.style.display = 'none';
+            startBtn.style.display = 'inline-block';
+        });
+
+        // Fallback caso o evento dispare antes
+        setTimeout(() => {
+            if (startBtn.style.display === 'none') {
+                loadingMsg.style.display = 'none';
+                startBtn.style.display = 'inline-block';
+            }
+        }, 3000);
+
+        // Carrega a API do YouTube dinamicamente
         let tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         let firstScriptTag = document.getElementsByTagName('script')[0];
@@ -189,7 +218,8 @@
                 videoId: 'VqZZLTJkl5Q',
                 playerVars: {
                     'autoplay': 0,
-                    'controls': 0
+                    'controls': 0,
+                    'enablejsapi': 1
                 },
                 events: {
                     'onStateChange': (event) => {
@@ -208,8 +238,11 @@
                 audioPlayer.playVideo();
             }
 
+            // Garante que o vídeo de fundo dê play com áudio mudo
+            videoElement.play().catch(e => console.log(e));
+
             // Esconde o botão interativo
-            document.querySelector('.play-btn').style.display = 'none';
+            startBtn.style.display = 'none';
 
             // Segurança: Duração aproximada do poema narrado (~11 minutos e 4 segundos = 664000ms)
             setTimeout(() => {
@@ -225,8 +258,7 @@
             document.getElementById('footer-credit').style.opacity = '0';
             
             setTimeout(() => {
-                const video = document.getElementById('bg-video');
-                if (video) video.pause();
+                videoElement.pause();
             }, 3000);
         }
 
