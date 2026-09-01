@@ -17,11 +17,11 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
-            background-color: #050505;
+            background-color: #030303;
             color: #e0e0e0;
         }
 
-        /* Vídeo de fundo em loop */
+        /* Vídeo de fundo com blur calibrado para visibilidade */
         .video-background {
             position: fixed;
             top: 0;
@@ -31,6 +31,7 @@
             z-index: -2;
             overflow: hidden;
             pointer-events: none;
+            transition: opacity 3s ease-in-out;
         }
 
         .video-background iframe {
@@ -38,22 +39,35 @@
             top: 50%;
             left: 50%;
             width: 100vw;
-            height: 56.25vw; /* Proporção 16:9 */
+            height: 56.25vw;
             min-height: 100vh;
-            min-width: 177.77vh; /* Proporção 16:9 */
+            min-width: 177.77vh;
             transform: translate(-50%, -50%) scale(1.15);
-            filter: brightness(0.35) contrast(1.2) blur(3px);
+            /* Blur ajustado para exibir melhor a gameplay e manter a atmosfera */
+            filter: brightness(0.6) contrast(1.15) blur(1.5px);
             border: none;
         }
 
-        /* Camada de Efeito de Vinheta e Textura */
+        /* Camada de Partículas Minimalistas */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            transition: opacity 3s ease-in-out;
+        }
+
+        /* Camada de Vinheta e Sombra */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.85) 90%);
+            background: radial-gradient(circle, rgba(0,0,0,0.1) 30%, rgba(0,0,0,0.7) 90%);
             z-index: -1;
             pointer-events: none;
         }
@@ -68,13 +82,14 @@
             text-align: center;
             padding: 20px;
             z-index: 1;
+            transition: opacity 3s ease-in-out;
         }
 
         .pixel-title {
             font-family: 'VT323', monospace;
             font-size: 4rem;
-            color: #d1d1d1;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            color: #e5e5e5;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
             margin-bottom: 10px;
             letter-spacing: 2px;
             animation: fadeIn 2s ease-in-out;
@@ -83,7 +98,7 @@
         .subtitle {
             font-size: 1.1rem;
             font-weight: 300;
-            color: #888;
+            color: #aaa;
             max-width: 600px;
             line-height: 1.6;
             margin-bottom: 40px;
@@ -92,8 +107,8 @@
 
         /* Botão Interativo Estilizado */
         .play-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             color: #fff;
             padding: 14px 35px;
             font-size: 1rem;
@@ -111,25 +126,25 @@
             color: #000;
             border-color: #fff;
             transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
         }
 
         .footer-credit {
             position: absolute;
             bottom: 20px;
             font-size: 0.8rem;
-            color: #555;
+            color: #666;
             letter-spacing: 1px;
+            transition: opacity 3s ease-in-out;
         }
 
-        /* Animações */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15); }
             70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
@@ -137,37 +152,117 @@
 </head>
 <body>
 
-    <div class="video-background">
-        <iframe src="https://www.youtube-nocookie.com/embed/VqZZLTJkl5Q?autoplay=1&mute=1&controls=0&loop=1&playlist=VqZZLTJkl5Q&start=1" 
+    <div class="video-background" id="bg-container">
+        <iframe src="https://www.youtube-nocookie.com/embed/8mgPMEdj7tw?autoplay=1&mute=1&controls=0&loop=1&playlist=8mgPMEdj7tw" 
                 title="Minecraft Gameplay Background" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
         </iframe>
     </div>
 
+    <canvas id="particles-canvas"></canvas>
+
     <div class="overlay"></div>
 
-    <div class="container">
+    <div class="container" id="main-content">
         <h1 class="pixel-title">O FIM DO JOGO</h1>
-        <p class="subtitle">"E o universo disse: Eu te amo, porque você é o amor..." <br> Uma jornada inesquecível através do tempo, blocos e memórias.</p>
+        <p class="subtitle">"E o universo disse: Eu te amo, porque você é o amor..." <br> Uma jornada inesquecível construída bloco por bloco.</p>
         
-        <button class="play-btn" onclick="activateAudio()">Ouvir a Narrativa</button>
+        <button class="play-btn" onclick="startExperience()">Iniciar Experiência</button>
     </div>
 
-    <div class="footer-credit">Inspirado na essência de Minecraft • [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
+    <div class="footer-credit" id="footer-credit">Gameplay: [http://www.youtube.com/watch?v=8mgPMEdj7tw] • Poema: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        function activateAudio() {
-            // Cria um player do YouTube interativo por cima para tocar o áudio completo ao clique do usuário
-            const bgDiv = document.querySelector('.video-background');
-            bgDiv.innerHTML = `
-                <iframe src="https://www.youtube-nocookie.com/embed/VqZZLTJkl5Q?autoplay=1&controls=0&loop=1&playlist=VqZZLTJkl5Q&start=1" 
-                        title="Minecraft End Poem Audio" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        style="position: absolute; top: 50%; left: 50%; width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.77vh; transform: translate(-50%, -50%) scale(1.15); filter: brightness(0.3) contrast(1.2) blur(3px); border: none;">
-                </iframe>
+        // Configuração das Partículas Minimalistas
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.8 + 0.5;
+                this.speedY = (Math.random() * 0.3 - 0.15);
+                this.speedX = (Math.random() * 0.2 - 0.1);
+                this.alpha = Math.random() * 0.5 + 0.2;
+                this.fadeSpeed = Math.random() * 0.005 + 0.002;
+            }
+            update() {
+                this.y -= this.speedY;
+                this.x += this.speedX;
+                this.alpha += (Math.random() > 0.5 ? 1 : -1) * 0.01;
+                if (this.alpha < 0.1) this.alpha = 0.1;
+                if (this.alpha > 0.8) this.alpha = 0.8;
+
+                if (this.y < 0 || this.y > canvas.height || this.x < 0 || this.x > canvas.width) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 45; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // Função ativada pelo clique para iniciar o áudio e agendar o fade out do fim do poema
+        function startExperience() {
+            // Insere o iframe do poema narrado (com som ligado) e mantém a gameplay de fundo rodando
+            const bgContainer = document.getElementById('bg-container');
+            
+            // Adiciona o elemento de áudio/vídeo do poema em segundo plano com volume ativo
+            const audioDiv = document.createElement('div');
+            audioDiv.style.display = 'none';
+            audioDiv.innerHTML = `
+                <iframe src="https://www.youtube-nocookie.com/embed/VqZZLTJkl5Q?autoplay=1" 
+                        allow="autoplay" title="End Poem Audio"></iframe>
             `;
-            // Esconde o botão após o clique para manter a tela limpa e cinematográfica
+            document.body.appendChild(audioDiv);
+
+            // Esconde o botão de início
             document.querySelector('.play-btn').style.display = 'none';
+
+            // Duração do poema narrado do End: ~11 minutos e 4 segundos (664000 milissegundos)
+            // Agendamos o efeito de escurecer tudo exatamente quando o áudio terminar
+            const poemDurationMs = 664000; 
+            
+            setTimeout(() => {
+                triggerFadeOut();
+            }, poemDurationMs);
+        }
+
+        // Função que faz tudo se apagar suavemente e finalizar
+        function triggerFadeOut() {
+            document.getElementById('bg-container').style.opacity = '0';
+            document.getElementById('particles-canvas').style.opacity = '0';
+            document.getElementById('main-content').style.opacity = '0';
+            document.getElementById('footer-credit').style.opacity = '0';
         }
     </script>
 </body>
