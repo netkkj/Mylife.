@@ -21,7 +21,7 @@
             color: #e0e0e0;
         }
 
-        /* Vídeo de fundo com blur calibrado para visibilidade */
+        /* Container do Vídeo de Fundo */
         .video-background {
             position: fixed;
             top: 0;
@@ -34,6 +34,7 @@
             transition: opacity 3s ease-in-out;
         }
 
+        /* Garante que o iframe cubra toda a tela de forma responsiva */
         .video-background iframe {
             position: absolute;
             top: 50%;
@@ -43,12 +44,12 @@
             min-height: 100vh;
             min-width: 177.77vh;
             transform: translate(-50%, -50%) scale(1.15);
-            /* Blur ajustado para exibir melhor a gameplay e manter a atmosfera */
             filter: brightness(0.6) contrast(1.15) blur(1.5px);
             border: none;
+            pointer-events: none;
         }
 
-        /* Camada de Partículas Minimalistas */
+        /* Canvas de Partículas Minimalistas */
         #particles-canvas {
             position: fixed;
             top: 0;
@@ -60,7 +61,7 @@
             transition: opacity 3s ease-in-out;
         }
 
-        /* Camada de Vinheta e Sombra */
+        /* Vinheta */
         .overlay {
             position: fixed;
             top: 0;
@@ -105,7 +106,7 @@
             animation: fadeIn 2.5s ease-in-out;
         }
 
-        /* Botão Interativo Estilizado */
+        /* Botão Interativo */
         .play-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.25);
@@ -153,14 +154,12 @@
 <body>
 
     <div class="video-background" id="bg-container">
-        <iframe src="https://www.youtube-nocookie.com/embed/8mgPMEdj7tw?autoplay=1&mute=1&controls=0&loop=1&playlist=8mgPMEdj7tw" 
-                title="Minecraft Gameplay Background" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>
+        <div id="bg-player"></div>
     </div>
 
-    <canvas id="particles-canvas"></canvas>
+    <div id="audio-player" style="display:none;"></div>
 
+    <canvas id="particles-canvas"></canvas>
     <div class="overlay"></div>
 
     <div class="container" id="main-content">
@@ -173,7 +172,87 @@
     <div class="footer-credit" id="footer-credit">Gameplay: [http://www.youtube.com/watch?v=8mgPMEdj7tw] • Poema: [http://www.youtube.com/watch?v=VqZZLTJkl5Q]</div>
 
     <script>
-        // Configuração das Partículas Minimalistas
+        // Carrega a API do YouTube IFrame de forma dinâmica
+        let tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        let firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        let bgPlayer, audioPlayer;
+
+        // Função chamada automaticamente pela API do YouTube quando pronta
+        window.onYouTubeIframeAPIReady = function() {
+            // Player de fundo (Gameplay - Mudo em loop)
+            bgPlayer = new YT.Player('bg-player', {
+                height: '100%',
+                width: '100%',
+                videoId: '8mgPMEdj7tw',
+                playerVars: {
+                    'autoplay': 1,
+                    'mute': 1,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': '8mgPMEdj7tw',
+                    'showinfo': 0,
+                    'rel': 0,
+                    'iv_load_policy': 3
+                }
+            });
+
+            // Player de áudio (Poema narrado)
+            audioPlayer = new YT.Player('audio-player', {
+                height: '1',
+                width: '1',
+                videoId: 'VqZZLTJkl5Q',
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0
+                },
+                events: {
+                    'onStateChange': onAudioStateChange
+                }
+            });
+        };
+
+        // Inicia a experiência ao clicar no botão
+        function startExperience() {
+            if (audioPlayer && typeof audioPlayer.playVideo === 'function') {
+                audioPlayer.unMute();
+                audioPlayer.playVideo();
+            }
+            
+            // Esconde o botão interativo
+            document.querySelector('.play-btn').style.display = 'none';
+
+            // Duração do poema narrado (~11 minutos e 4 segundos = 664000ms)
+            // Caso o vídeo termine, aciona o fade out por segurança
+            setTimeout(() => {
+                triggerFadeOut();
+            }, 664000);
+        }
+
+        // Monitora o estado do áudio do poema para apagar tudo assim que acabar
+        function onAudioStateChange(event) {
+            // YT.PlayerState.ENDED = 0 (Vídeo finalizado)
+            if (event.data === 0) {
+                triggerFadeOut();
+            }
+        }
+
+        // Função de Fade Out suave que apaga tudo ao final
+        function triggerFadeOut() {
+            document.getElementById('bg-container').style.opacity = '0';
+            document.getElementById('particles-canvas').style.opacity = '0';
+            document.getElementById('main-content').style.opacity = '0';
+            document.getElementById('footer-credit').style.opacity = '0';
+            
+            // Pausa a gameplay de fundo também para finalizar tudo
+            if (bgPlayer && typeof bgPlayer.pauseVideo === 'function') {
+                bgPlayer.pauseVideo();
+            }
+        }
+
+        // Sistema de Partículas Minimalistas
         const canvas = document.getElementById('particles-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -196,7 +275,6 @@
                 this.speedY = (Math.random() * 0.3 - 0.15);
                 this.speedX = (Math.random() * 0.2 - 0.1);
                 this.alpha = Math.random() * 0.5 + 0.2;
-                this.fadeSpeed = Math.random() * 0.005 + 0.002;
             }
             update() {
                 this.y -= this.speedY;
@@ -230,40 +308,6 @@
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
-
-        // Função ativada pelo clique para iniciar o áudio e agendar o fade out do fim do poema
-        function startExperience() {
-            // Insere o iframe do poema narrado (com som ligado) e mantém a gameplay de fundo rodando
-            const bgContainer = document.getElementById('bg-container');
-            
-            // Adiciona o elemento de áudio/vídeo do poema em segundo plano com volume ativo
-            const audioDiv = document.createElement('div');
-            audioDiv.style.display = 'none';
-            audioDiv.innerHTML = `
-                <iframe src="https://www.youtube-nocookie.com/embed/VqZZLTJkl5Q?autoplay=1" 
-                        allow="autoplay" title="End Poem Audio"></iframe>
-            `;
-            document.body.appendChild(audioDiv);
-
-            // Esconde o botão de início
-            document.querySelector('.play-btn').style.display = 'none';
-
-            // Duração do poema narrado do End: ~11 minutos e 4 segundos (664000 milissegundos)
-            // Agendamos o efeito de escurecer tudo exatamente quando o áudio terminar
-            const poemDurationMs = 664000; 
-            
-            setTimeout(() => {
-                triggerFadeOut();
-            }, poemDurationMs);
-        }
-
-        // Função que faz tudo se apagar suavemente e finalizar
-        function triggerFadeOut() {
-            document.getElementById('bg-container').style.opacity = '0';
-            document.getElementById('particles-canvas').style.opacity = '0';
-            document.getElementById('main-content').style.opacity = '0';
-            document.getElementById('footer-credit').style.opacity = '0';
-        }
     </script>
 </body>
 </html>
